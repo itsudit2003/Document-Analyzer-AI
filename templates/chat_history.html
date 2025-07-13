@@ -1,0 +1,4 @@
+{% for h in history %}
+  <div class="chat-bubble user"><strong>You:</strong> {{ h.question }}</div>
+  <div class="chat-bubble bot"><strong>AI:</strong> {{ h.answer }}</div>
+{% endfor %}

@@ -1,0 +1,111 @@
+{
+  "info": {
+    "name": "Document AI Assistant",
+    "description": "Postman collection for the Document-Based AI Assistant Flask app",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload & Summarize Document",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/sample.pdf"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5000/chat",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "chat"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Ask a Question",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "question",
+              "value": "What is this document about?",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5000/ask",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "ask"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Challenge Me",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/challenge",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "challenge"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Submit Challenge Answer",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "answer",
+              "value": "This is my answer.",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5000/submit_challenge",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "submit_challenge"
+          ]
+        }
+      }
+    }
+  ]
+}

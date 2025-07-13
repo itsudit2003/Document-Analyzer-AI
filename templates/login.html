@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/static/style.css" />
+    <title>Login | Document Analyser AI</title>
+</head>
+
+<body>
+    <div class="login-box">
+        <div class="login-header">
+            {% if error %}
+            <div style="color: red; text-align: center; margin-bottom: 10px;">{{ error }}</div>
+            {% endif %}
+            <header>Document Analyser AI</header>
+        </div>
+
+        <form method="POST" action="/">
+            <div class="input-box">
+                <input type="text" class="input-field" name="username" placeholder="Username" autocomplete="off"
+                    required />
+            </div>
+            <div class="input-box">
+                <input type="password" class="input-field" name="password" placeholder="Password" autocomplete="off"
+                    required />
+            </div>
+
+            <div class="input-submit">
+                <button type="submit" class="submit-btn" id="submit"></button>
+                <label for="submit">Sign In</label>
+            </div>
+        </form>
+
+        <div class="sign-up-link">
+            <p>Don't have an account? <a href="#" onclick="toggleRegister()">Sign Up</a></p>
+        </div>
+
+        <!-- Register Form (Hidden by default) -->
+        <form method="POST" action="/register" id="register-form" style="display:none;">
+            <div class="input-box">
+                <input type="text" class="input-field" name="username" placeholder="Choose a Username"
+                    autocomplete="off" required />
+            </div>
+            <div class="input-box">
+                <input type="password" class="input-field" name="password" placeholder="Choose a Password"
+                    autocomplete="off" required />
+            </div>
+
+            <div class="input-submit">
+                <button type="submit" class="submit-btn"></button>
+                <label>Register</label>
+            </div>
+            <div class="sign-up-link">
+                <p>Already have an account? <a href="#" onclick="toggleLogin()">Login</a></p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function toggleRegister() {
+            document.querySelector("form[action='/']").style.display = "none";
+            document.getElementById("register-form").style.display = "block";
+        }
+        function toggleLogin() {
+            document.querySelector("form[action='/']").style.display = "block";
+            document.getElementById("register-form").style.display = "none";
+        }
+    </script>
+</body>
+
+</html>
