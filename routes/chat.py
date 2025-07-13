@@ -1,20 +1,21 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for
+from flask import Blueprint, render_template, request, session, redirect, url_for, jsonify
 from modules.document_reader import read_pdf, read_txt
-from flask import jsonify, render_template_string
 from modules.text_cleaner import clean_text
 from modules.summarizer import summarize_text
 from modules.chat_engine import initialize_user_memory, generate_answer
 from modules.challenge_engine import generate_challenge_question, evaluate_user_answer
+from db.database import save_chat_history, load_chat_memory_for_user
+
 import os
 import tempfile
 from werkzeug.utils import secure_filename
 
 chat_bp = Blueprint('chat_bp', __name__)
 
+# --------------- Upload & Summarize ----------------
 @chat_bp.route('/chat', methods=['GET', 'POST'])
 def chat_home():
     summary = ""
-    answer = ""
     if request.method == 'POST':
         file = request.files['file']
         if not file or file.filename == "":
@@ -40,13 +41,18 @@ def chat_home():
         summary = summarize_text(clean)
         session['context'] = clean
         session['user'] = session.get('user', 'guest')
-        session['score'] = 0  # initialize score
+        session['score'] = 0
         initialize_user_memory(session['user'])
 
-        return render_template('chat.html', summary=summary, answer="")
+        # 🔁 Load chat history from DB
+        session['history'] = [
+            {"question": row[0], "answer": row[1]}
+            for row in load_chat_memory_for_user(session['user'])
+        ]
 
-    return render_template('chat.html', summary="", answer="")
+    return render_template('chat.html', summary=summary)
 
+# --------------- Ask Anything ----------------
 @chat_bp.route('/ask', methods=['POST'])
 def ask_question():
     q = request.form.get('question', '').strip()
@@ -57,23 +63,19 @@ def ask_question():
         return jsonify({'chat_html': '<div class="chat-bubble bot">❌ Please upload a document first.</div>'})
 
     answer = generate_answer(username, q, context)
+    save_chat_history(username, q, answer)
 
-    if 'history' not in session:
-        session['history'] = []
-
-    session['history'].append({
-        "question": q,
-        "answer": answer
-    })
-    session.modified = True
+    session['history'] = [
+        {"question": row[0], "answer": row[1]}
+        for row in load_chat_memory_for_user(username)
+    ]
 
     rendered_html = render_template('chat_history.html', history=session['history'])
+    print("History:", session['history'])
+
     return jsonify({'chat_html': rendered_html})
 
-
-
-# ------------------- Challenge Mode ----------------------
-
+# --------------- Challenge Mode ----------------
 @chat_bp.route('/challenge', methods=['GET'])
 def challenge_me():
     context = session.get('context', '')
