@@ -61,7 +61,6 @@ def generate_answer(username, user_question, context):
     memory.append(AIMessage(content=reply))
     chat_memory[username] = memory
 
-    # 8️⃣ Save to DB
-    save_chat_history(username, user_question, reply)
+ 
 
     return reply
