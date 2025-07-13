@@ -1,107 +1,66 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for, jsonify
-from modules.document_reader import read_pdf, read_txt
-from modules.text_cleaner import clean_text
-from modules.summarizer import summarize_text
-from modules.chat_engine import initialize_user_memory, generate_answer
-from modules.challenge_engine import generate_challenge_question, evaluate_user_answer
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from db.database import save_chat_history, load_chat_memory_for_user
-
+from dotenv import load_dotenv
 import os
-import tempfile
-from werkzeug.utils import secure_filename
 
-chat_bp = Blueprint('chat_bp', __name__)
+load_dotenv()
+GEM_KEY = os.getenv("GOOGLE_API_KEY")
 
-# --------------- Upload & Summarize ----------------
-@chat_bp.route('/chat', methods=['GET', 'POST'])
-def chat_home():
-    summary = ""
-    if request.method == 'POST':
-        file = request.files['file']
-        if not file or file.filename == "":
-            return render_template('chat.html', summary="❌ No file uploaded.", answer="")
+if not GEM_KEY:
+    raise ValueError("GOOGLE_API_KEY not found in .env!")
 
-        filename = secure_filename(file.filename)
-        temp_path = os.path.join(tempfile.gettempdir(), filename)
-        file.save(temp_path)
+# Initialize Gemini with concise answer settings
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash",
+    temperature=0.4,
+    max_output_tokens=500,
+)
 
-        if filename.endswith('.pdf'):
-            text = read_pdf(temp_path)
-        elif filename.endswith('.txt'):
-            text = read_txt(temp_path)
-        else:
-            return render_template('chat.html', summary="❌ Only .pdf or .txt files are supported.", answer="")
+# In-memory user context memory
+chat_memory = {}
 
-        try:
-            os.remove(temp_path)
-        except:
-            pass
+# 1️⃣ Load existing history from DB and store in-memory
+def initialize_user_memory(username):
+    history = load_chat_memory_for_user(username)
+    memory = []
+    for q, a in history:
+        memory.append(HumanMessage(content=q))
+        memory.append(AIMessage(content=a))
+    chat_memory[username] = memory
 
-        clean = clean_text(text)
-        summary = summarize_text(clean)
-        session['context'] = clean
-        session['user'] = session.get('user', 'guest')
-        session['score'] = 0
-        initialize_user_memory(session['user'])
+# 2️⃣ Main generate_answer function
+def generate_answer(username, user_question, context):
+    if username not in chat_memory:
+        chat_memory[username] = []
 
-        # 🔁 Load chat history from DB
-        session['history'] = [
-            {"question": row[0], "answer": row[1]}
-            for row in load_chat_memory_for_user(session['user'])
-        ]
+    memory = chat_memory[username]
 
-    return render_template('chat.html', summary=summary)
+    # 3️⃣ Add context only once (or reset if user uploads new doc)
+    if not any(isinstance(m, SystemMessage) for m in memory):
+        system_instruction = (
+            "You are a helpful assistant. "
+            "Only answer based on the following document context. "
+            "Respond concisely (within 2–5 lines). Avoid unrelated details.\n\n"
+            f"Context:\n{context}"
+        )
+        memory.insert(0, SystemMessage(content=system_instruction))
 
-# --------------- Ask Anything ----------------
-@chat_bp.route('/ask', methods=['POST'])
-def ask_question():
-    q = request.form.get('question', '').strip()
-    context = session.get('context', '')
-    username = session.get('user', 'guest')
+    # 4️⃣ Add user question to memory
+    memory.append(HumanMessage(content=user_question))
 
-    if not context:
-        return jsonify({'chat_html': '<div class="chat-bubble bot">❌ Please upload a document first.</div>'})
+    # 5️⃣ Keep only last 10 turns + context
+    if len(memory) > 21:
+        memory = [memory[0]] + memory[-20:]
 
-    answer = generate_answer(username, q, context)
-    save_chat_history(username, q, answer)
+    # 6️⃣ Get response from Gemini
+    response = llm.invoke(memory)
+    reply = response.content.strip()
 
-    session['history'] = [
-        {"question": row[0], "answer": row[1]}
-        for row in load_chat_memory_for_user(username)
-    ]
+    # 7️⃣ Store response
+    memory.append(AIMessage(content=reply))
+    chat_memory[username] = memory
 
-    rendered_html = render_template('chat_history.html', history=session['history'])
-    print("History:", session['history'])
+ 
 
-    return jsonify({'chat_html': rendered_html})
-
-# --------------- Challenge Mode ----------------
-@chat_bp.route('/challenge', methods=['GET'])
-def challenge_me():
-    context = session.get('context', '')
-    if not context:
-        return redirect(url_for('chat_bp.chat_home'))
-
-    question = generate_challenge_question(context)
-    session['challenge_question'] = question
-    return render_template('challenge.html', question=question, feedback=None, score=session.get('score', 0))
-
-@chat_bp.route('/submit_challenge', methods=['POST'])
-def submit_challenge():
-    user_answer = request.form.get('answer', '').strip()
-    context = session.get('context', '')
-    question = session.get('challenge_question', '')
-    feedback = "Something went wrong."
-
-    if not context or not question:
-        return redirect(url_for('chat_bp.chat_home'))
-
-    result = evaluate_user_answer(context, question, user_answer)
-    correct = result['correct'].lower() == 'yes'
-    reason = result['reason']
-
-    if correct:
-        session['score'] += 1
-
-    feedback = f"{'✅ Correct!' if correct else '❌ Incorrect.'} Reason: {reason}"
-    return render_template('challenge.html', question=question, feedback=feedback, score=session['score'])
+    return reply
