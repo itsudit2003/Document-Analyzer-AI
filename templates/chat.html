@@ -77,17 +77,13 @@
   </div>
 
   <!-- 💬 Chat History -->
-  <div class="card mt-4 mb-4">
-    <div class="card-header bg-secondary text-white">💬 Chat History</div>
-    <div class="card-body chat-log" id="chat-box">
-      {% if history %}
-        {% for h in history %}
-          <div class="chat-bubble user"><strong>You:</strong> {{ h.question }}</div>
-          <div class="chat-bubble bot"><strong>AI:</strong> {{ h.answer }}</div>
-        {% endfor %}
-      {% endif %}
-    </div>
+<div class="card mt-4 mb-4">
+  <div class="card-header bg-secondary text-white">💬 Chat History</div>
+  <div class="card-body chat-log" id="chat-box">
+    <!-- Chat will be dynamically inserted here via JS -->
   </div>
+</div>
+
 
 </div>
 
@@ -121,6 +117,7 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
     console.error(error);
   });
 });
+
 </script>
 
 </body>
