@@ -12,6 +12,6 @@ if not GEM_KEY:
 llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.4)
 
 def summarize_text(text):
-    prompt = f"Summarize this document:\n\n{text[:12000]}"
+    prompt = f"Summarize this document in not more than 70 words:\n\n{text[:12000]}"
     response = llm.invoke([HumanMessage(content=prompt)])
     return response.content
