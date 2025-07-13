@@ -7,7 +7,7 @@ An AI-powered assistant that understands documents. Upload a PDF or TXT file, ge
 
 ## 🧠 Why This Project?
 
-Reading documents is boring. This AI makes it easier:
+Reading large documents is boring and a lengthy process. This AI makes it easier:
 
 - 📑 Understands long documents
 - ✨ Summarizes core ideas
@@ -128,7 +128,7 @@ graph TD
 
 ---
 
-## 🧪 Challenge Me Mode (Gamified Testing)
+## 🧪 Challenge Me Mode (Test your Knowledge)
 
 This mode uses Gemini to:
 - Auto-generate a question from your uploaded context  
