@@ -20,7 +20,7 @@ llm = ChatGoogleGenerativeAI(
 # In-memory user context memory
 chat_memory = {}
 
-# 1️⃣ Load existing history from DB and store in-memory
+# 1️ Load existing history from DB and store in-memory
 def initialize_user_memory(username):
     history = load_chat_memory_for_user(username)
     memory = []
@@ -29,35 +29,35 @@ def initialize_user_memory(username):
         memory.append(AIMessage(content=a))
     chat_memory[username] = memory
 
-# 2️⃣ Main generate_answer function
+# 2️ Main generate_answer function
 def generate_answer(username, user_question, context):
     if username not in chat_memory:
         chat_memory[username] = []
 
     memory = chat_memory[username]
 
-    # 3️⃣ Add context only once (or reset if user uploads new doc)
+    # 3️ Add context only once (or reset if user uploads new doc)
     if not any(isinstance(m, SystemMessage) for m in memory):
         system_instruction = (
-            "You are a helpful assistant. "
+            "You are a friendly natured helpful assistant. "
             "Only answer based on the following document context. "
-            "Respond concisely (within 2–5 lines). Avoid unrelated details.\n\n"
+            "Respond concisely (within 2–2 lines) also with a brief justification (e.g., Reference to paragraph 3 of section 1...). Avoid unrelated details and also keep yourself updated with the latest document context uploaded.\n\n"
             f"Context:\n{context}"
         )
         memory.insert(0, SystemMessage(content=system_instruction))
 
-    # 4️⃣ Add user question to memory
+    # 4️ Add user question to memory
     memory.append(HumanMessage(content=user_question))
 
-    # 5️⃣ Keep only last 10 turns + context
+    # 5️ Keep only last 10 turns + context
     if len(memory) > 21:
         memory = [memory[0]] + memory[-20:]
 
-    # 6️⃣ Get response from Gemini
+    # 6️ Get response from Gemini
     response = llm.invoke(memory)
     reply = response.content.strip()
 
-    # 7️⃣ Store response
+    # 7️ Store response
     memory.append(AIMessage(content=reply))
     chat_memory[username] = memory
 
