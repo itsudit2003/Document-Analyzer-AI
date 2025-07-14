@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for, jsonify
 from modules.document_reader import read_pdf, read_txt
 from modules.text_cleaner import clean_text
+from modules.chat_engine import generate_answer, reset_user_memory
 from modules.summarizer import summarize_text
-from modules.chat_engine import initialize_user_memory, generate_answer
 from modules.challenge_engine import generate_challenge_question, evaluate_user_answer
 from db.database import save_chat_history, load_chat_memory_for_user
 
@@ -42,7 +42,7 @@ def chat_home():
         session['context'] = clean
         session['user'] = session.get('user', 'guest')
         session['score'] = 0
-        initialize_user_memory(session['user'])
+        reset_user_memory(session['user'], clean)
 
         # 🔁 Load chat history from DB
         session['history'] = [
